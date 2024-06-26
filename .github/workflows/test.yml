@@ -1,0 +1,27 @@
+name: Test
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    test:
+        runs-on: [ubuntu-latest]
+        container:
+            image: python:3.9
+        steps:
+            - name: Checkout code.
+              uses: actions/checkout@v4
+
+            - name: Prepare.
+              run : |
+                    pip install -r requirements.txt
+                    pip install pytest
+
+            - name: Run tests.
+              run : |
+                    PYTHONPATH=$PWD pytest tests/test_topology.py
