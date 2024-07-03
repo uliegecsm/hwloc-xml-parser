@@ -2,7 +2,7 @@ import subprocess
 import unittest
 from unittest.mock import call
 
-from topology import SystemTopology
+from hwloc_xml_parser.topology import SystemTopology
 
 class TestSystemTopology:
     """
