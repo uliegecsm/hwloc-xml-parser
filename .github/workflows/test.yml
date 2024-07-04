@@ -24,7 +24,7 @@ jobs:
 
             - name: Run tests.
               run : |
-                  PYTHONPATH=$PWD pytest tests/test_topology.py
+                  python -m pytest tests/test_topology.py
 
     install-as-package:
         runs-on: [ubuntu-latest]
@@ -38,8 +38,8 @@ jobs:
 
             - name: Install as package.
               run : |
-                  pip3 install git+https://github.com/uliegecsm/hwloc-xml-parser.git@${{ github.sha }}
+                  pip install git+https://github.com/uliegecsm/hwloc-xml-parser.git@${{ github.sha }}
 
             - name: Test package.
               run : |
-                  python3 -c "from hwloc_xml_parser.topology import SystemTopology; topo = SystemTopology()"
+                  python -c "from hwloc_xml_parser.topology import SystemTopology; topo = SystemTopology()"
