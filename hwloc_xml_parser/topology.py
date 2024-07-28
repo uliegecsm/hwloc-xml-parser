@@ -55,6 +55,13 @@ class Core(Object):
         self.hierarchical_index = f'{parent.type}:{parent.os_index}.{self.type}:{self.os_index}'
         self.pus = [PU(x, parent = self) for x in element.findall(path = "object[@type='PU']")]
 
+    @typeguard.typechecked
+    def get_num_pus(self) -> int:
+        """
+        Returns the number of processing units.
+        """
+        return len(self.pus)
+
 class Package(Object):
     """
     Package. Usually equivalent to a socket.
@@ -65,6 +72,27 @@ class Package(Object):
         self.os_index = int(element.attrib['os_index'])
         self.hierarchical_index = f'Package:{self.os_index}'
         self.cores = [Core(x, parent = self) for x in element.findall(path = "object[@type='Core']")]
+
+    @typeguard.typechecked
+    def get_num_cores(self) -> int:
+        """
+        Returns the number of cores.
+        """
+        return len(self.cores)
+
+    @typeguard.typechecked
+    def get_num_pus(self) -> int:
+        """
+        Returns the number of processing units.
+        """
+        return sum([core.get_num_pus() for core in self.cores])
+
+    @typeguard.typechecked
+    def all_equal_num_pus_per_core(self) -> bool:
+        """
+        Returns `True` if all cores have the same number of processing units.
+        """
+        return all([core.get_num_pus() == self.cores[0].get_num_pus() for core in self.cores])
 
 class SystemTopology:
     """
@@ -121,7 +149,7 @@ class SystemTopology:
 
         if not self.machine.tag == 'object':
             raise ValueError(f"Expected 'object' tag, got '{self.machine.tag}'")
-        
+
         if not self.machine.attrib['type'] == 'Machine':
             raise ValueError(f"Expected 'Machine' type, got '{self.machine.attrib['type']}'")
 
@@ -173,3 +201,31 @@ class SystemTopology:
         for core in self.recurse_cores():
             for pu in core.pus:
                 yield pu
+
+    @typeguard.typechecked
+    def get_num_packages(self) -> int:
+        """
+        Returns the number of packages.
+        """
+        return len(self.packages)
+
+    @typeguard.typechecked
+    def get_num_cores(self) -> int:
+        """
+        Returns the number of cores.
+        """
+        return sum([package.get_num_cores() for package in self.packages])
+
+    @typeguard.typechecked
+    def get_num_pus(self) -> int:
+        """
+        Returns the number of processing units.
+        """
+        return sum([package.get_num_pus() for package in self.packages])
+
+    @typeguard.typechecked
+    def all_equal_num_pus_per_core(self) -> bool:
+        """
+        Returns `True` if all cores have the same number of processing units.
+        """
+        return all([package.all_equal_num_pus_per_core() for package in self.packages])

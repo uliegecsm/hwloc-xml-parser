@@ -1,0 +1,12 @@
+{
+    "image": "ghcr.io/uliegecsm/hwloc-xml-parser",
+    "extensions" : [
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "ms-azuretools.vscode-docker"
+    ],
+    "runArgs": [
+        "--privileged",
+    ],
+    "onCreateCommand": "git config --global --add safe.directory $PWD"
+}

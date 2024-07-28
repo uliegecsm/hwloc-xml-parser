@@ -1,0 +1,18 @@
+FROM python:3.9
+
+RUN --mount=type=bind,target=/requirements,type=bind,source=requirements <<EOF
+
+    set -ex
+
+    # Install system dependencies
+    apt update
+
+    apt --yes --no-install-recommends install $(grep -vE "^\s*#" /requirements/requirements.system.txt  | tr "\n" " ")
+
+    apt clean && rm -rf /var/lib/apt/lists/*
+
+    # Install Python dependencies
+    pip install -r /requirements/requirements.python.txt
+    pip install pytest
+
+EOF
