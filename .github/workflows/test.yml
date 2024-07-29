@@ -9,33 +9,28 @@ on:
             - main
 
 jobs:
+    set-vars:
+        uses: ./.github/workflows/set-vars.yml
+
     test:
+        needs: [set-vars]
         runs-on: [ubuntu-latest]
         container:
-            image: python:3.9
+            image: ${{ needs.set-vars.outputs.CI_IMAGE }}
         steps:
             - name: Checkout code.
               uses: actions/checkout@v4
-
-            - name: Prepare.
-              run : |
-                  pip install -r requirements.txt
-                  pip install pytest
 
             - name: Run tests.
               run : |
                   python -m pytest tests/test_topology.py
 
-    install-as-package:
+    install-as-package-and-test:
+        needs: [set-vars]
         runs-on: [ubuntu-latest]
         container:
-            image: python:3.9
+            image: ${{ needs.set-vars.outputs.CI_IMAGE }}
         steps:
-            - name: Prepare.
-              run : |
-                  apt update
-                  apt --yes --no-install-recommends install hwloc
-
             - name: Install as package.
               run : |
                   pip install git+https://github.com/uliegecsm/hwloc-xml-parser.git@${{ github.sha }}
