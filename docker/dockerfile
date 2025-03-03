@@ -1,18 +1,40 @@
-FROM python:3.9
+FROM python:3.9 AS requirements
 
-RUN --mount=type=bind,target=/requirements,type=bind,source=requirements <<EOF
+RUN --mount=type=bind,target=/requirements/requirements.python.txt,type=bind,source=requirements/requirements.python.txt <<EOF
+    set -ex
+    python3 -m pip install pytest
+    python3 -m pip install git+https://github.com/uliegecsm/system-helpers
+    python3 -m pip install -r /requirements/requirements.python.txt
+EOF
 
+RUN apt-helpers install-packages --update --clean --packages git
+
+FROM requirements AS compile-hwloc
+
+ARG HWLOC_VERSION
+
+RUN <<EOF
     set -ex
 
-    # Install system dependencies
-    apt update
+    apt-helpers install-packages --update --clean --packages libtool autoconf automake pkg-config
 
-    apt --yes --no-install-recommends install $(grep -vE "^\s*#" /requirements/requirements.system.txt  | tr "\n" " ")
+    git clone --depth=1 --branch=hwloc-${HWLOC_VERSION} https://github.com/open-mpi/hwloc /opt/open-mpi/hwloc-sources
 
-    apt clean && rm -rf /var/lib/apt/lists/*
+    cd /opt/open-mpi/hwloc-sources
 
-    # Install Python dependencies
-    pip install -r /requirements/requirements.python.txt
-    pip install pytest
+    ./autogen.sh
 
+    mkdir build && cd build
+
+    ../configure --prefix=/opt/hwloc-${HWLOC_VERSION} --enable-shared
+
+    make -j8 install
 EOF
+
+FROM requirements AS final
+
+ARG HWLOC_VERSION
+
+COPY --from=compile-hwloc /opt/hwloc-${HWLOC_VERSION} /opt/hwloc-${HWLOC_VERSION}
+
+ENV PATH=/opt/hwloc-${HWLOC_VERSION}/bin:$PATH

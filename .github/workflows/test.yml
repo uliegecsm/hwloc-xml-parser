@@ -15,11 +15,19 @@ jobs:
     test:
         needs: [set-vars]
         runs-on: [ubuntu-latest]
+        strategy:
+            fail-fast: false
+            matrix:
+                version: [
+                    2.9.0,
+                    2.12.0
+                ]
         container:
-            image: ${{ needs.set-vars.outputs.CI_IMAGE }}
+            image: ${{ needs.set-vars.outputs.CI_IMAGE }}:${{ matrix.version }}
         steps:
-            - name: Checkout code.
-              uses: actions/checkout@v4
+            - uses: actions/checkout@v4
+
+            - run: lstopo-no-graphics
 
             - name: Run tests.
               run : |
@@ -28,8 +36,15 @@ jobs:
     install-as-package-and-test:
         needs: [set-vars]
         runs-on: [ubuntu-latest]
+        strategy:
+            fail-fast: false
+            matrix:
+                version: [
+                    2.9.0,
+                    2.12.0
+                ]
         container:
-            image: ${{ needs.set-vars.outputs.CI_IMAGE }}
+            image: ${{ needs.set-vars.outputs.CI_IMAGE }}:${{ matrix.version }}
         steps:
             - name: Install as package.
               run : |

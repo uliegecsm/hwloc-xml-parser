@@ -328,3 +328,11 @@ class TestSystemTopology:
 
             # All cores of the machine have the same number of PUs.
             assert st.all_equal_num_pus_per_core()
+
+    def test_parse(self):
+        """
+        Run the tool and check that it parses to something meaningful, whatever the machine.
+        """
+        st = SystemTopology(load = True)
+
+        assert st.get_num_pus() > 0
