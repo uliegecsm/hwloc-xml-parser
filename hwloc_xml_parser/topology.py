@@ -104,7 +104,7 @@ class SystemTopology:
     @typeguard.typechecked
     def __init__(self, load : bool = True, caches : bool = False, io : bool = False, bridges : bool = False) -> None:
         """
-        Initialize with optional load of the the system topology from `lstopo-no-graphics`.
+        Initialize with optional load of the system topology from `lstopo-no-graphics`.
         """
         if load: self._load(caches = caches, io = io, bridges = bridges)
 
