@@ -99,6 +99,10 @@ class TestSystemTopology:
             assert package.cores[1].pus[1].os_index      == 5
             assert package.cores[1].pus[1].logical_index == 3
 
+            # The third core of the package has OS index 2 and logical index 2.
+            assert package.cores[2].os_index      == 2
+            assert package.cores[2].logical_index == 2
+
             # All cores of the package have 2 PUs.
             assert package.all_equal_num_pus_per_core()
 
@@ -244,6 +248,10 @@ class TestSystemTopology:
             # The first core of the first package has 2 PUs.
             assert len(first_package.cores[0].pus) == 2
             assert first_package.cores[0].get_num_pus() == 2
+
+            # The nine-th core of the first package has OS index 10 and logical index 8.
+            assert first_package.cores[8].os_index      == 10
+            assert first_package.cores[8].logical_index == 8
 
             # All cores of the first package have 2 PUs.
             assert first_package.all_equal_num_pus_per_core()

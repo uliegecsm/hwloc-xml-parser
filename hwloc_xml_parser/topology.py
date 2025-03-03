@@ -109,7 +109,7 @@ class SystemTopology:
         if load: self._load(caches = caches, io = io, bridges = bridges)
 
     @typeguard.typechecked
-    def _load(self, caches : bool = False, io : bool = False, bridges : bool = False) -> None:
+    def _load(self, caches : bool = False, io : bool = False, bridges : bool = False, die : bool = False) -> None:
         """
         Initialize the system topology from `lstopo-no-graphics`.
         """
@@ -118,6 +118,9 @@ class SystemTopology:
         if not caches : cmd.append('--no-caches')
         if not io     : cmd.append('--no-io')
         if not bridges: cmd.append('--no-bridges')
+        if not die    :
+            cmd.append('--ignore')
+            cmd.append('die')
 
         with tempfile.NamedTemporaryFile(mode = 'w+', suffix = '.xml') as filename:
 
@@ -163,12 +166,12 @@ class SystemTopology:
         # Set the logical indices for the packages, cores, and PUs.
         for objects in [self.packages, list(self.recurse_cores()), list(self.recurse_pus())]:
             logical_indices = Object.get_logical_from_physical(
-            type = objects[0].type,
-            hierarchical_indices = [obj.hierarchical_index for obj in objects]
-        )
+                type = objects[0].type,
+                hierarchical_indices = [obj.hierarchical_index for obj in objects]
+            )
 
-        for obj, logical_index in zip(objects, logical_indices):
-            obj.logical_index = logical_index
+            for obj, logical_index in zip(objects, logical_indices):
+                obj.logical_index = logical_index
 
     @typeguard.typechecked
     def __str__(self) -> str:
