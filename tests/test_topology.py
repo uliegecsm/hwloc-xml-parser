@@ -1,7 +1,10 @@
 import itertools
+import shutil
 import subprocess
 import unittest
 from unittest.mock import call
+
+import pytest
 
 from hwloc_xml_parser.topology import SystemTopology
 
@@ -329,6 +332,7 @@ class TestSystemTopology:
             # All cores of the machine have the same number of PUs.
             assert st.all_equal_num_pus_per_core()
 
+    @pytest.mark.skipif(shutil.which(cmd = SystemTopology.LSTOPO_NO_GRAPHICS) is None, reason = f'{SystemTopology.LSTOPO_NO_GRAPHICS} not found')
     def test_parse(self):
         """
         Run the tool and check that it parses to something meaningful, whatever the machine.
