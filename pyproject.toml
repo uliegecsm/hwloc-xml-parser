@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+    "hwloc_xml_parser",
+]
+
+[tool.setuptools.package-dir]
+"hwloc_xml_parser" = "hwloc_xml_parser"
+
+[tool.setuptools.dynamic]
+# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html#dynamic-metadata
+version = {attr = "hwloc_xml_parser.__version__"}
+
+[project]
+name = 'hwloc-xml-parser'
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">= 3.10"
+dependencies = []
+dynamic = [
+    "version",
+]
+authors = [
+  {name = "Arnst Maarten"},
+  {name = "Tomasetti Romin"},
+]
+
+[project.urls]
+Homepage = "https://github.com/uliegecsm/hwloc-xml-parser"

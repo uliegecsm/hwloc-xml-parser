@@ -7,7 +7,7 @@ from hwloc_xml_parser.topology import SystemTopology
 
 class TestSystemTopology:
     """
-        Test :py:class:`system.SystemTopology`.
+    Test :py:class:`system.SystemTopology`.
     """
 
     def test_parse_single_intel_core_i7_4790(self):
