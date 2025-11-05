@@ -1,9 +1,10 @@
 {
-    "image": "ghcr.io/uliegecsm/hwloc-xml-parser",
+    "image": "ghcr.io/uliegecsm/hwloc-xml-parser:2.9.0",
     "extensions" : [
         "eamodio.gitlens",
         "mhutchie.git-graph",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
     ],
     "runArgs": [
         "--privileged",
