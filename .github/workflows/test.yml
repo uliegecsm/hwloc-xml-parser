@@ -31,7 +31,10 @@ jobs:
 
             - name: Run tests.
               run : |
-                  python -m pytest tests/test_topology.py
+                  python -m pytest \
+                      --typeguard-packages=hwloc_xml_parser \
+                      -vvv --log-cli-level=info \
+                      tests/test_topology.py
 
     install-as-package-and-test:
         needs: [set-vars]
