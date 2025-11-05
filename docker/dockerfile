@@ -1,4 +1,4 @@
-FROM python:3.9 AS requirements
+FROM python:3.10 AS requirements
 
 RUN --mount=type=bind,target=/requirements/requirements.python.txt,type=bind,source=requirements/requirements.python.txt <<EOF
     set -ex
