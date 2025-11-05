@@ -137,6 +137,8 @@ class SystemTopology:
 
         self.machine = self.topology.find(path = 'object[@type=\'Machine\']')
 
+        assert self.machine is not None
+
         if not self.machine.tag == 'object':
             raise ValueError(f"Expected 'object' tag, got '{self.machine.tag}'")
 

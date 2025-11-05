@@ -56,3 +56,13 @@ jobs:
             - name: Test package.
               run : |
                   python -c "from hwloc_xml_parser.topology import SystemTopology; topo = SystemTopology()"
+
+    mypy:
+        needs: [set-vars]
+        runs-on: [ubuntu-latest]
+        container:
+            image: ${{ needs.set-vars.outputs.CI_IMAGE }}:2.9.0
+        steps:
+            - uses: actions/checkout@v5
+
+            - run: mypy hwloc_xml_parser/
