@@ -36,8 +36,23 @@ jobs:
                       -vvv --log-cli-level=info \
                       tests/test_topology.py
 
+    build-package:
+        needs: [set-vars, test]
+        runs-on: ubuntu-latest
+        container:
+            image: ${{ needs.set-vars.outputs.CI_IMAGE }}:2.9.0
+        steps:
+            - uses: actions/checkout@v5
+            - run: python -m pip install -U build
+            - run: python -m build
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: package
+                  path: dist/
+                  retention-days: 1
+
     install-as-package-and-test:
-        needs: [set-vars]
+        needs: [set-vars, build-package]
         runs-on: [ubuntu-latest]
         strategy:
             fail-fast: false
@@ -49,9 +64,14 @@ jobs:
         container:
             image: ${{ needs.set-vars.outputs.CI_IMAGE }}:${{ matrix.version }}
         steps:
-            - name: Install as package.
-              run : |
-                  pip install git+https://github.com/uliegecsm/hwloc-xml-parser.git@${{ github.sha }}
+            - uses: actions/download-artifact@v4
+              with:
+                  name: package
+                  path: dist/
+
+            - run: |
+                  python -m pip install dist/*.whl
+                  python -m pip show hwloc_xml_parser
 
             - name: Test package.
               run : |
