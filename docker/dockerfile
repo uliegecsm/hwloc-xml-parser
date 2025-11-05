@@ -1,11 +1,6 @@
 FROM python:3.10 AS requirements
 
-RUN --mount=type=bind,target=/requirements/requirements.python.txt,type=bind,source=requirements/requirements.python.txt <<EOF
-    set -ex
-    python3 -m pip install pytest
-    python3 -m pip install git+https://github.com/uliegecsm/system-helpers
-    python3 -m pip install -r /requirements/requirements.python.txt
-EOF
+RUN python3 -m pip install mypy pytest system-helpers>=0.0.3 typeguard
 
 RUN apt-helpers install-packages --update --clean --packages git
 
