@@ -6,8 +6,6 @@ import typing
 import xml.etree
 import xml.etree.ElementTree
 
-import typeguard
-
 @dataclasses.dataclass(frozen = False)
 class Object:
     """
@@ -21,7 +19,6 @@ class Object:
     logical_index      : int = -1
 
     @classmethod
-    @typeguard.typechecked
     def get_logical_from_physical(cls, type : str, hierarchical_indices : typing.List[str]) -> typing.List[int]:
         """
         Method to convert from an OS index (physical index) that the OS assigns to an object to the logical
@@ -36,7 +33,6 @@ class PU(Object):
     """
     Processing unit. The smallest unit of computation represented by `hwloc`.
     """
-    @typeguard.typechecked
     def __init__(self, element : xml.etree.ElementTree.Element, parent : 'Core') -> None:
         self.parent = parent
         self.type = 'PU'
@@ -47,7 +43,6 @@ class Core(Object):
     """
     Core.
     """
-    @typeguard.typechecked
     def __init__(self, element : xml.etree.ElementTree.Element, parent : 'Package') -> None:
         self.parent = parent
         self.type = 'Core'
@@ -55,7 +50,6 @@ class Core(Object):
         self.hierarchical_index = f'{parent.type}:{parent.os_index}.{self.type}:{self.os_index}'
         self.pus = [PU(x, parent = self) for x in element.findall(path = "object[@type='PU']")]
 
-    @typeguard.typechecked
     def get_num_pus(self) -> int:
         """
         Returns the number of processing units.
@@ -66,28 +60,24 @@ class Package(Object):
     """
     Package. Usually equivalent to a socket.
     """
-    @typeguard.typechecked
     def __init__(self, element : xml.etree.ElementTree.Element) -> None:
         self.type = 'Package'
         self.os_index = int(element.attrib['os_index'])
         self.hierarchical_index = f'Package:{self.os_index}'
         self.cores = [Core(x, parent = self) for x in element.findall(path = "object[@type='Core']")]
 
-    @typeguard.typechecked
     def get_num_cores(self) -> int:
         """
         Returns the number of cores.
         """
         return len(self.cores)
 
-    @typeguard.typechecked
     def get_num_pus(self) -> int:
         """
         Returns the number of processing units.
         """
         return sum([core.get_num_pus() for core in self.cores])
 
-    @typeguard.typechecked
     def all_equal_num_pus_per_core(self) -> bool:
         """
         Returns `True` if all cores have the same number of processing units.
@@ -101,14 +91,12 @@ class SystemTopology:
     References:
         * https://hwloc.readthedocs.io/en/stable/tools.html#cli_lstopo
     """
-    @typeguard.typechecked
     def __init__(self, load : bool = True, caches : bool = False, io : bool = False, bridges : bool = False) -> None:
         """
         Initialize with optional load of the system topology from `lstopo-no-graphics`.
         """
         if load: self._load(caches = caches, io = io, bridges = bridges)
 
-    @typeguard.typechecked
     def _load(self, caches : bool = False, io : bool = False, bridges : bool = False, die : bool = False) -> None:
         """
         Initialize the system topology from `lstopo-no-graphics`.
@@ -131,7 +119,6 @@ class SystemTopology:
 
             self._parse(filename = filename.name)
 
-    @typeguard.typechecked
     def _parse(self, filename : typing.Union[pathlib.Path, str]) -> None:
         """
         Parse output of `lstopo-no-graphics`.
@@ -173,7 +160,6 @@ class SystemTopology:
             for obj, logical_index in zip(objects, logical_indices):
                 obj.logical_index = logical_index
 
-    @typeguard.typechecked
     def __str__(self) -> str:
         """
         Returns a string representation of the system topology.
@@ -187,7 +173,6 @@ class SystemTopology:
                     descr += f'\t\t{pu}\n'
         return descr
 
-    @typeguard.typechecked
     def recurse_cores(self) -> typing.Generator:
         """
         Returns a generator to recurse over all cores.
@@ -196,7 +181,6 @@ class SystemTopology:
             for core in package.cores:
                 yield core
 
-    @typeguard.typechecked
     def recurse_pus(self) -> typing.Generator:
         """
         Returns a generator to recurse over all processing units.
@@ -205,28 +189,24 @@ class SystemTopology:
             for pu in core.pus:
                 yield pu
 
-    @typeguard.typechecked
     def get_num_packages(self) -> int:
         """
         Returns the number of packages.
         """
         return len(self.packages)
 
-    @typeguard.typechecked
     def get_num_cores(self) -> int:
         """
         Returns the number of cores.
         """
         return sum([package.get_num_cores() for package in self.packages])
 
-    @typeguard.typechecked
     def get_num_pus(self) -> int:
         """
         Returns the number of processing units.
         """
         return sum([package.get_num_pus() for package in self.packages])
 
-    @typeguard.typechecked
     def all_equal_num_pus_per_core(self) -> bool:
         """
         Returns `True` if all cores have the same number of processing units.
