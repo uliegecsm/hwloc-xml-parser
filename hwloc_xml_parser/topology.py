@@ -6,7 +6,7 @@ import typing
 import xml.etree
 import xml.etree.ElementTree
 
-@dataclasses.dataclass(frozen = False, slots = True)
+@dataclasses.dataclass(frozen = False)
 class Object:
     """
     Base class for objects (Package, Core, PU, ...) that `hwloc` organizes in a tree.
