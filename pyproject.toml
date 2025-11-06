@@ -33,7 +33,7 @@ Homepage = "https://github.com/uliegecsm/hwloc-xml-parser"
 
 [tool.cibuildwheel]
 build = ["cp31[0-9]-manylinux*"]
-archs = ["x86_64"]
+archs = []
 
 test-requires = ["pytest"]
 test-sources = ["tests"]

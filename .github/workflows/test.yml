@@ -38,17 +38,25 @@ jobs:
 
     build-package:
         needs: [set-vars, test]
-        runs-on: ubuntu-latest
+        runs-on: ${{ matrix.runs-on }}
+        strategy:
+            matrix:
+                include:
+                    - runs-on: ubuntu-24.04
+                      arch   : x86_64
+                    - runs-on: ubuntu-24.04-arm
+                      arch   : aarch64
+            fail-fast: false
         steps:
             - uses: actions/checkout@v5
             - uses: actions/setup-python@v6
               with:
                   python-version: '3.11'
             - run: python -m pip install -U cibuildwheel
-            - run: python -m cibuildwheel --output-dir wheelhouse
+            - run: python -m cibuildwheel --archs=${{ matrix.arch }} --output-dir wheelhouse
             - uses: actions/upload-artifact@v4
               with:
-                  name: package
+                  name: package-${{ matrix.arch }}
                   path: wheelhouse/
                   retention-days: 1
 
@@ -67,7 +75,7 @@ jobs:
         steps:
             - uses: actions/download-artifact@v4
               with:
-                  name: package
+                  name: package-x86_64
                   path: wheelhouse/
 
             - run: |
