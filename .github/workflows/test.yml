@@ -88,4 +88,4 @@ jobs:
         steps:
             - uses: actions/checkout@v5
 
-            - run: mypy hwloc_xml_parser/
+            - run: mypy --strict hwloc_xml_parser/

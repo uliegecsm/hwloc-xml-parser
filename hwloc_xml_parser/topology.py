@@ -6,6 +6,8 @@ import typing
 import xml.etree
 import xml.etree.ElementTree
 
+TYPE = typing.Literal['Core', 'Package', 'PU']
+
 @dataclasses.dataclass(frozen = False, slots = True)
 class Object:
     """
@@ -14,28 +16,31 @@ class Object:
     References:
         * https://hwloc.readthedocs.io/en/stable/termsanddefs.html
     """
-    os_index           : int = -1
-    hierarchical_index : str = ''
-    logical_index      : int = -1
+    os_index           : int
+    hierarchical_index : str
+    logical_index      : int
+
+    type : typing.ClassVar[TYPE]
 
     @classmethod
-    def get_logical_from_physical(cls, type : str, hierarchical_indices : typing.List[str]) -> typing.List[int]:
+    def get_logical_from_physical(cls, type : str, hierarchical_indices : typing.Iterable[str]) -> typing.Tuple[int, ...]:
         """
         Method to convert from an OS index (physical index) that the OS assigns to an object to the logical
         index that `hwloc` assigns to this object.
         """
-        args = [
+        args : tuple[str, ...] = (
             'hwloc-calc', '-I', type, '--physical-input', '--logical-output', *hierarchical_indices,
-        ]
-        return [int(x) for x in subprocess.check_output(args = args).decode().strip().split(',')]
+        )
+        return tuple(int(x) for x in subprocess.check_output(args = args).decode().strip().split(','))
 
 class PU(Object):
     """
     Processing unit. The smallest unit of computation represented by `hwloc`.
     """
+    type : typing.ClassVar[TYPE] = 'PU'
+
     def __init__(self, element : xml.etree.ElementTree.Element, parent : 'Core') -> None:
         self.parent = parent
-        self.type = 'PU'
         self.os_index = int(element.attrib['os_index'])
         self.hierarchical_index = f'{parent.parent.type}:{parent.parent.os_index}.{parent.type}:{parent.os_index}.PU:{self.os_index}'
 
@@ -43,12 +48,13 @@ class Core(Object):
     """
     Core.
     """
+    type : typing.ClassVar[TYPE] = 'Core'
+
     def __init__(self, element : xml.etree.ElementTree.Element, parent : 'Package') -> None:
         self.parent = parent
-        self.type = 'Core'
         self.os_index = int(element.attrib['os_index'])
         self.hierarchical_index = f'{parent.type}:{parent.os_index}.{self.type}:{self.os_index}'
-        self.pus = [PU(x, parent = self) for x in element.findall(path = "object[@type='PU']")]
+        self.pus : tuple[PU, ...] = tuple(PU(x, parent = self) for x in element.findall(path = "object[@type='PU']"))
 
     def get_num_pus(self) -> int:
         """
@@ -60,11 +66,12 @@ class Package(Object):
     """
     Package. Usually equivalent to a socket.
     """
+    type : typing.ClassVar[TYPE] = 'Package'
+
     def __init__(self, element : xml.etree.ElementTree.Element) -> None:
-        self.type = 'Package'
         self.os_index = int(element.attrib['os_index'])
         self.hierarchical_index = f'Package:{self.os_index}'
-        self.cores = [Core(x, parent = self) for x in element.findall(path = "object[@type='Core']")]
+        self.cores = tuple(Core(x, parent = self) for x in element.findall(path = "object[@type='Core']"))
 
     def get_num_cores(self) -> int:
         """
@@ -76,13 +83,13 @@ class Package(Object):
         """
         Returns the number of processing units.
         """
-        return sum([core.get_num_pus() for core in self.cores])
+        return sum(core.get_num_pus() for core in self.cores)
 
     def all_equal_num_pus_per_core(self) -> bool:
         """
         Returns `True` if all cores have the same number of processing units.
         """
-        return all([core.get_num_pus() == self.cores[0].get_num_pus() for core in self.cores])
+        return all(core.get_num_pus() == self.cores[0].get_num_pus() for core in self.cores)
 
 class SystemTopology:
     """
@@ -152,13 +159,13 @@ class SystemTopology:
             raise ValueError("Expected 'info' and 'object' children of 'Machine' object")
 
         # Parse all the packages and their children.
-        self.packages = [Package(x) for x in self.machine.findall(path = 'object[@type=\'Package\']')]
+        self.packages = tuple(Package(x) for x in self.machine.findall(path = 'object[@type=\'Package\']'))
 
         # Set the logical indices for the packages, cores, and PUs.
-        for objects in [self.packages, list(self.recurse_cores()), list(self.recurse_pus())]:
+        for objects in (self.packages, list(self.recurse_cores()), list(self.recurse_pus())):
             logical_indices = Object.get_logical_from_physical(
                 type = objects[0].type,
-                hierarchical_indices = [obj.hierarchical_index for obj in objects]
+                hierarchical_indices = (obj.hierarchical_index for obj in objects)
             )
 
             for obj, logical_index in zip(objects, logical_indices):
@@ -177,7 +184,7 @@ class SystemTopology:
                     descr += f'\t\t{pu}\n'
         return descr
 
-    def recurse_cores(self) -> typing.Generator:
+    def recurse_cores(self) -> typing.Generator[Core, None, None]:
         """
         Returns a generator to recurse over all cores.
         """
@@ -185,7 +192,7 @@ class SystemTopology:
             for core in package.cores:
                 yield core
 
-    def recurse_pus(self) -> typing.Generator:
+    def recurse_pus(self) -> typing.Generator[PU, None, None]:
         """
         Returns a generator to recurse over all processing units.
         """
