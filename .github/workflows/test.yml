@@ -130,7 +130,7 @@ jobs:
             id-token: write
 
         steps:
-            - run: echo ${{ toJSON(github.event) }}
+            - run: echo "${{ toJSON(github.event) }}"
             - uses: actions/download-artifact@v5
               with:
                   pattern: package-*
