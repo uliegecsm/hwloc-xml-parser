@@ -48,24 +48,24 @@ class TestSystemTopology:
             st._parse(filename = 'tests/data/single-intel-core-i7-4790.xml')
 
             subprocess.check_output.assert_has_calls([
-                call(args=[
+                call(args = (
                     'hwloc-calc', '-I', 'Package', '--physical-input', '--logical-output',
                     'Package:0'
-                ]),
-                call(args=[
+                )),
+                call(args = (
                     'hwloc-calc', '-I', 'Core', '--physical-input', '--logical-output',
                     'Package:0.Core:0',
                     'Package:0.Core:1',
                     'Package:0.Core:2',
                     'Package:0.Core:3'
-                ]),
-                call(args=[
+                )),
+                call(args = (
                     'hwloc-calc', '-I', 'PU', '--physical-input', '--logical-output',
                     'Package:0.Core:0.PU:0', 'Package:0.Core:0.PU:4',
                     'Package:0.Core:1.PU:1', 'Package:0.Core:1.PU:5',
                     'Package:0.Core:2.PU:2', 'Package:0.Core:2.PU:6',
                     'Package:0.Core:3.PU:3', 'Package:0.Core:3.PU:7'
-                ])
+                ))
             ])
 
             # The machine has 1 package.
@@ -177,12 +177,12 @@ class TestSystemTopology:
             st._parse(filename = 'tests/data/dual-intel-xeon-gold-6126.xml')
 
             subprocess.check_output.assert_has_calls([
-                call(args=[
+                call(args = (
                     'hwloc-calc', '-I', 'Package', '--physical-input', '--logical-output',
                     'Package:0',
                     'Package:1'
-                ]),
-                call(args=[
+                )),
+                call(args = (
                     'hwloc-calc', '-I', 'Core', '--physical-input', '--logical-output',
                     'Package:0.Core:0',
                     'Package:0.Core:1',
@@ -208,8 +208,8 @@ class TestSystemTopology:
                     'Package:1.Core:11',
                     'Package:1.Core:12',
                     'Package:1.Core:13'
-                ]),
-                call(args=[
+                )),
+                call(args = (
                     'hwloc-calc', '-I', 'PU', '--physical-input', '--logical-output',
                     'Package:0.Core:0.PU:0',   'Package:0.Core:0.PU:24',
                     'Package:0.Core:1.PU:1',   'Package:0.Core:1.PU:25',
@@ -235,7 +235,7 @@ class TestSystemTopology:
                     'Package:1.Core:11.PU:21', 'Package:1.Core:11.PU:45',
                     'Package:1.Core:12.PU:22', 'Package:1.Core:12.PU:46',
                     'Package:1.Core:13.PU:23', 'Package:1.Core:13.PU:47'
-                ])
+                ))
             ])
 
             # There are 2 packages.
