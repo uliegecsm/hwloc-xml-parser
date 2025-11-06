@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "mypy[mypyc]"]
+requires = ["setuptools>=78", "mypy[mypyc]"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -30,3 +30,13 @@ authors = [
 
 [project.urls]
 Homepage = "https://github.com/uliegecsm/hwloc-xml-parser"
+
+[tool.cibuildwheel]
+build = ["cp31[0-9]-manylinux*"]
+archs = ["x86_64"]
+
+test-requires = ["pytest"]
+test-sources = ["tests"]
+test-command = "pytest {project}/tests"
+
+build-verbosity = 1

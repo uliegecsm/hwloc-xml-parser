@@ -1,8 +1,8 @@
-FROM python:3.10 AS requirements
+FROM python:3.11 AS requirements
 
 RUN python3 -m pip install mypy[mypyc] pytest system-helpers>=0.0.3 typeguard
 
-RUN apt-helpers install-packages --update --clean --packages git
+RUN apt-helpers install-packages --update --clean --packages git docker.io
 
 FROM requirements AS compile-hwloc
 

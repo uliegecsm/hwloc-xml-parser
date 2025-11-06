@@ -91,6 +91,8 @@ class SystemTopology:
     References:
         * https://hwloc.readthedocs.io/en/stable/tools.html#cli_lstopo
     """
+    LSTOPO_NO_GRAPHICS : typing.Final[str] = 'lstopo-no-graphics'
+
     def __init__(self, load : bool = True, caches : bool = False, io : bool = False, bridges : bool = False) -> None:
         """
         Initialize with optional load of the system topology from `lstopo-no-graphics`.
@@ -101,7 +103,7 @@ class SystemTopology:
         """
         Initialize the system topology from `lstopo-no-graphics`.
         """
-        cmd = ['lstopo-no-graphics', '--no-collapse']
+        cmd = [self.LSTOPO_NO_GRAPHICS, '--no-collapse']
 
         if not caches : cmd.append('--no-caches')
         if not io     : cmd.append('--no-io')
@@ -201,16 +203,16 @@ class SystemTopology:
         """
         Returns the number of cores.
         """
-        return sum([package.get_num_cores() for package in self.packages])
+        return sum(package.get_num_cores() for package in self.packages)
 
     def get_num_pus(self) -> int:
         """
         Returns the number of processing units.
         """
-        return sum([package.get_num_pus() for package in self.packages])
+        return sum(package.get_num_pus() for package in self.packages)
 
     def all_equal_num_pus_per_core(self) -> bool:
         """
         Returns `True` if all cores have the same number of processing units.
         """
-        return all([package.all_equal_num_pus_per_core() for package in self.packages])
+        return all(package.all_equal_num_pus_per_core() for package in self.packages)
