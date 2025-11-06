@@ -16,8 +16,10 @@ version = {attr = "hwloc_xml_parser.__version__"}
 
 [project]
 name = 'hwloc-xml-parser'
+description = 'Parse xml output of hwloc.'
 license = "MIT"
 license-files = ["LICENSE"]
+readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">= 3.10"
 dependencies = []
 dynamic = [
