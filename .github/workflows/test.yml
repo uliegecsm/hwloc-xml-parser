@@ -7,6 +7,8 @@ on:
     pull_request:
         branches:
             - main
+    release:
+        types: [published]
 
 jobs:
     set-vars:
@@ -37,7 +39,7 @@ jobs:
                       tests/test_topology.py
 
     build-package:
-        needs: [set-vars, test]
+        needs: [test]
         runs-on: ${{ matrix.runs-on }}
         strategy:
             matrix:
@@ -57,6 +59,22 @@ jobs:
             - uses: actions/upload-artifact@v4
               with:
                   name: package-${{ matrix.arch }}
+                  path: wheelhouse/
+                  retention-days: 1
+
+    build-package-sdist:
+        needs: [test]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: '3.11'
+            - run: python -m pip install -U build
+            - run: python -m build --sdist --verbose --outdir wheelhouse .
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: package-sdist
                   path: wheelhouse/
                   retention-days: 1
 
@@ -99,10 +117,10 @@ jobs:
     # Following instructions from
     # https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/#publishing-the-distribution-to-pypi.
     publish-to-pypi:
-        needs: [install-as-package-and-test, mypy, build-package, test]
+        needs: [install-as-package-and-test, mypy, build-package, build-package-sdist, test]
         runs-on: [ubuntu-latest]
 
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: github.event_name == 'release' && github.event.action == 'published'
 
         environment:
             name: pypi
@@ -112,6 +130,7 @@ jobs:
             id-token: write
 
         steps:
+            - run: echo ${{ toJSON(github.event) }}
             - uses: actions/download-artifact@v5
               with:
                   pattern: package-*
