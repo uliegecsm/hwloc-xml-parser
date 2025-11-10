@@ -91,7 +91,7 @@ jobs:
         container:
             image: ${{ needs.set-vars.outputs.CI_IMAGE }}:${{ matrix.version }}
         steps:
-            - uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v6
               with:
                   name: package-x86_64
                   path: wheelhouse/
@@ -131,7 +131,7 @@ jobs:
 
         steps:
             - run: echo '${{ toJSON(github.event) }}'
-            - uses: actions/download-artifact@v5
+            - uses: actions/download-artifact@v6
               with:
                   pattern: package-*
                   path: wheelhouse
