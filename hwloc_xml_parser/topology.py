@@ -1,4 +1,5 @@
 import dataclasses
+import logging
 import pathlib
 import subprocess
 import tempfile
@@ -6,17 +7,20 @@ import typing
 import xml.etree
 import xml.etree.ElementTree
 
-@dataclasses.dataclass(frozen = False, slots = True)
+@dataclasses.dataclass(frozen = False, slots = True, kw_only = True)
 class Object:
     """
     Base class for objects (Package, Core, PU, ...) that `hwloc` organizes in a tree.
 
     References:
-        * https://hwloc.readthedocs.io/en/stable/termsanddefs.html
+
+    * https://hwloc.readthedocs.io/en/stable/termsanddefs.html
     """
-    os_index           : int
-    logical_index      : int
+    os_index : int
+    logical_index : int = dataclasses.field(init = False, default = -1)
     parent : typing.Optional['Object'] = None
+
+    element : dataclasses.InitVar[xml.etree.ElementTree.Element]
 
     @property
     def hierarchical_index(self) -> str:
@@ -36,22 +40,36 @@ class Object:
         )
         return tuple(int(x) for x in subprocess.check_output(args = args).decode().strip().split(','))
 
+@dataclasses.dataclass(frozen = False, slots = True, kw_only = True)
 class PU(Object):
     """
     Processing unit. The smallest unit of computation represented by `hwloc`.
     """
-    def __init__(self, element : xml.etree.ElementTree.Element, parent : 'Core') -> None:
-        self.parent = parent
-        self.os_index = int(element.attrib['os_index'])
+    @classmethod
+    def parse(cls, element : xml.etree.ElementTree.Element, parent : typing.Optional['Core'] = None) -> 'PU':
+        return PU(
+            parent = parent,
+            os_index = int(element.attrib['os_index']),
+            element = element,
+        )
 
+@dataclasses.dataclass(frozen = False, slots = True, kw_only = True)
 class Core(Object):
     """
     Core.
     """
-    def __init__(self, element : xml.etree.ElementTree.Element, parent : 'Package') -> None:
-        self.parent = parent
-        self.os_index = int(element.attrib['os_index'])
-        self.pus : tuple[PU, ...] = tuple(PU(x, parent = self) for x in element.findall(path = "object[@type='PU']"))
+    pus : tuple[PU, ...] = dataclasses.field(init = False)
+
+    @classmethod
+    def parse(cls, element : xml.etree.ElementTree.Element, parent : typing.Optional[typing.Union['Package', 'Group']] = None) -> 'Core':
+        return Core(
+            parent = parent,
+            os_index = int(element.attrib['os_index']),
+            element = element,
+        )
+
+    def __post_init__(self, element : xml.etree.ElementTree.Element) -> None:
+        self.pus = tuple(PU.parse(element = x, parent = self) for x in element.findall(path = "object[@type='PU']"))
 
     def get_num_pus(self) -> int:
         """
@@ -59,14 +77,78 @@ class Core(Object):
         """
         return len(self.pus)
 
+@dataclasses.dataclass(frozen = False, slots = True, kw_only = True)
+class Group(Object):
+    """
+    Group, *e.g.* a cluster.
+    """
+    children : tuple[Core, ...] = dataclasses.field(init = False)
+
+    @classmethod
+    def parse(cls, element : xml.etree.ElementTree.Element, parent : typing.Optional['Package'] = None) -> 'Group':
+        return Group(
+            parent = parent,
+            os_index = int(element.attrib['os_index']),
+            element = element,
+        )
+
+    def __post_init__(self, element : xml.etree.ElementTree.Element) -> None:
+        self.children = tuple(self._parse(element = element))
+
+    def _parse(self, element : xml.etree.ElementTree.Element) -> typing.Generator[Core, None, None]:
+        for child in element.findall('object'):
+            yield self._parse_child(child)
+
+    def _parse_child(self, child : xml.etree.ElementTree.Element) -> Core:
+        match child.attrib.get('type'):
+            case 'Core':
+                return Core.parse(element = child, parent = self)
+            case _:
+                raise ValueError(f'unsupported child {child}')
+
+@dataclasses.dataclass(frozen = False, slots = True, kw_only = True)
 class Package(Object):
     """
     Package. Usually equivalent to a socket.
     """
-    def __init__(self, element : xml.etree.ElementTree.Element) -> None:
-        self.os_index = int(element.attrib['os_index'])
-        self.parent = None
-        self.cores = tuple(Core(x, parent = self) for x in element.findall(path = "object[@type='Core']"))
+    children : tuple[Core | Group, ...] = dataclasses.field(init = False)
+    cores : tuple[Core, ...] = dataclasses.field(init = False)
+
+    @classmethod
+    def parse(cls, element : xml.etree.ElementTree.Element) -> 'Package':
+        return Package(
+            parent = None,
+            os_index = int(element.attrib['os_index']),
+            element = element,
+        )
+
+    def __post_init__(self, element : xml.etree.ElementTree.Element) -> None:
+        self.children = tuple(self._parse(element = element))
+        self.cores = tuple(self._collect_cores(obj = self))
+
+    def _parse(self, element : xml.etree.ElementTree.Element) -> typing.Generator[Core | Group, None, None]:
+        for child in element.findall('object'):
+            obj = self._parse_child(child = child)
+            if obj is not None:
+                yield obj
+
+    def _parse_child(self, child : xml.etree.ElementTree.Element) -> Core | Group | None:
+        match child.attrib.get('type'):
+            case 'Core':
+                return Core.parse(element = child, parent = self)
+            case 'Group':
+                return Group.parse(element = child, parent = self)
+            case _:
+                logging.warning(f'Skipping child {child} ({child.attrib}).')
+        return None
+
+    @classmethod
+    def _collect_cores(cls, obj : Object) -> typing.Generator[Core, None, None]:
+        if isinstance(obj, Core):
+            yield obj
+        elif hasattr(obj, 'children'):
+            for child in obj.children:
+                yield from cls._collect_cores(child)
 
     def get_num_cores(self) -> int:
         """
@@ -130,6 +212,19 @@ class SystemTopology:
     def _parse(self, filename : typing.Union[pathlib.Path, str]) -> None:
         """
         Parse output of `lstopo-no-graphics`.
+
+        Here is a typical output for a modern ARM SoCs::
+
+            Machine
+            └── Package
+                ├── NUMANode
+                ├── Group (Cluster)
+                │     ├── Core
+                │     └── Core
+                ├── Group (Cluster)
+                │     ├── Core
+                │     └── Core
+                └── Core (prime core)
         """
         self.lstopo = xml.etree.ElementTree.parse(source = filename)
 
@@ -158,7 +253,7 @@ class SystemTopology:
             raise ValueError("Expected 'info' and 'object' children of 'Machine' object")
 
         # Parse all the packages and their children.
-        self.packages = tuple(Package(x) for x in self.machine.findall(path = 'object[@type=\'Package\']'))
+        self.packages = tuple(Package.parse(element = x) for x in self.machine.findall(path = 'object[@type=\'Package\']'))
 
         # Set the logical indices for the packages, cores, and PUs.
         for objects in (self.packages, list(self.recurse_cores()), list(self.recurse_pus())):

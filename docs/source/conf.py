@@ -45,3 +45,9 @@ autodoc_default_options = {
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
+
+# Some references are broken, or the package does not provide an object inventory file.
+# See also https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore_regex.
+nitpick_ignore_regex = [
+    ('py:class', 'Element'),
+]
