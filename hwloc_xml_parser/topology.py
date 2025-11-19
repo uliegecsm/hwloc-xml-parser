@@ -6,8 +6,6 @@ import typing
 import xml.etree
 import xml.etree.ElementTree
 
-TYPE = typing.Literal['Core', 'Package', 'PU']
-
 @dataclasses.dataclass(frozen = False, slots = True)
 class Object:
     """
@@ -17,10 +15,15 @@ class Object:
         * https://hwloc.readthedocs.io/en/stable/termsanddefs.html
     """
     os_index           : int
-    hierarchical_index : str
     logical_index      : int
+    parent : typing.Optional['Object'] = None
 
-    type : typing.ClassVar[TYPE]
+    @property
+    def hierarchical_index(self) -> str:
+        if self.parent is not None:
+            return f'{self.parent.hierarchical_index}.{self.__class__.__name__}:{self.os_index}'
+        else:
+            return f'{self.__class__.__name__}:{self.os_index}'
 
     @classmethod
     def get_logical_from_physical(cls, type : str, hierarchical_indices : typing.Iterable[str]) -> typing.Tuple[int, ...]:
@@ -37,23 +40,17 @@ class PU(Object):
     """
     Processing unit. The smallest unit of computation represented by `hwloc`.
     """
-    type : typing.ClassVar[TYPE] = 'PU'
-
     def __init__(self, element : xml.etree.ElementTree.Element, parent : 'Core') -> None:
         self.parent = parent
         self.os_index = int(element.attrib['os_index'])
-        self.hierarchical_index = f'{parent.parent.type}:{parent.parent.os_index}.{parent.type}:{parent.os_index}.PU:{self.os_index}'
 
 class Core(Object):
     """
     Core.
     """
-    type : typing.ClassVar[TYPE] = 'Core'
-
     def __init__(self, element : xml.etree.ElementTree.Element, parent : 'Package') -> None:
         self.parent = parent
         self.os_index = int(element.attrib['os_index'])
-        self.hierarchical_index = f'{parent.type}:{parent.os_index}.{self.type}:{self.os_index}'
         self.pus : tuple[PU, ...] = tuple(PU(x, parent = self) for x in element.findall(path = "object[@type='PU']"))
 
     def get_num_pus(self) -> int:
@@ -66,11 +63,9 @@ class Package(Object):
     """
     Package. Usually equivalent to a socket.
     """
-    type : typing.ClassVar[TYPE] = 'Package'
-
     def __init__(self, element : xml.etree.ElementTree.Element) -> None:
         self.os_index = int(element.attrib['os_index'])
-        self.hierarchical_index = f'Package:{self.os_index}'
+        self.parent = None
         self.cores = tuple(Core(x, parent = self) for x in element.findall(path = "object[@type='Core']"))
 
     def get_num_cores(self) -> int:
@@ -168,7 +163,7 @@ class SystemTopology:
         # Set the logical indices for the packages, cores, and PUs.
         for objects in (self.packages, list(self.recurse_cores()), list(self.recurse_pus())):
             logical_indices = Object.get_logical_from_physical(
-                type = objects[0].type,
+                type = objects[0].__class__.__name__,
                 hierarchical_indices = (obj.hierarchical_index for obj in objects)
             )
 
