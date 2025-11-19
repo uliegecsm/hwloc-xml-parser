@@ -32,6 +32,7 @@ authors = [
 
 [project.urls]
 Homepage = "https://github.com/uliegecsm/hwloc-xml-parser"
+Documentation = "https://uliegecsm.github.io/hwloc-xml-parser/"
 
 [tool.cibuildwheel]
 build = ["cp31[0-9]-manylinux*"]
@@ -42,3 +43,6 @@ test-sources = ["tests"]
 test-command = "pytest {project}/tests"
 
 build-verbosity = 1
+
+[tool.ruff.lint.per-file-ignores]
+"docs/source/conf.py" = ["E402"]
