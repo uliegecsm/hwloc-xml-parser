@@ -104,7 +104,8 @@ class SystemTopology:
         """
         Initialize with optional load of the system topology from `lstopo-no-graphics`.
         """
-        if load: self._load(caches = caches, io = io, bridges = bridges)
+        if load:
+            self._load(caches = caches, io = io, bridges = bridges)
 
     def _load(self, caches : bool = False, io : bool = False, bridges : bool = False, die : bool = False) -> None:
         """
@@ -112,10 +113,13 @@ class SystemTopology:
         """
         cmd = [self.LSTOPO_NO_GRAPHICS, '--no-collapse']
 
-        if not caches : cmd.append('--no-caches')
-        if not io     : cmd.append('--no-io')
-        if not bridges: cmd.append('--no-bridges')
-        if not die    :
+        if not caches:
+            cmd.append('--no-caches')
+        if not io:
+            cmd.append('--no-io')
+        if not bridges:
+            cmd.append('--no-bridges')
+        if not die:
             cmd.append('--ignore')
             cmd.append('die')
 
