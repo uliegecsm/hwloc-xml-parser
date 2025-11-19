@@ -1,12 +1,120 @@
 import itertools
 import shutil
 import subprocess
+import typing
 import unittest
 from unittest.mock import call
+import xml.etree.ElementTree
 
 import pytest
 
-from hwloc_xml_parser.topology import SystemTopology
+from hwloc_xml_parser.topology import Core, Group, Package, PU, SystemTopology
+
+class TestPU:
+    """
+    Tests for :py:class:`hwloc_xml_parser.topology.PU`.
+    """
+    XML : typing.Final[str] = '<object type="PU" os_index="2" cpuset="0x00000004" complete_cpuset="0x00000004" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="9"/>'
+
+    def test(self) -> None:
+        pu = PU.parse(element = xml.etree.ElementTree.fromstring(self.XML), parent = None)
+        assert pu.os_index == 2
+        assert pu.hierarchical_index == 'PU:2'
+
+        assert repr(pu) == 'PU(os_index=2, logical_index=-1, parent=None)'
+
+class TestCore:
+    """
+    Tests for :py:class:`hwloc_xml_parser.topology.Core`.
+    """
+    XML : typing.Final[str] = """\
+<object type="Core" os_index="1" cpuset="0x02000002" complete_cpuset="0x02000002" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="5">
+    <object type="PU" os_index="1" cpuset="0x00000002" complete_cpuset="0x00000002" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="6"/>
+    <object type="PU" os_index="25" cpuset="0x02000000" complete_cpuset="0x02000000" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="53"/>
+</object>
+"""
+
+    def test(self) -> None:
+        core = Core.parse(element = xml.etree.ElementTree.fromstring(self.XML), parent = None)
+        assert core.os_index == 1
+        assert core.hierarchical_index == 'Core:1'
+        assert len(core.pus) == 2
+
+        assert core.pus[0].os_index == 1
+        assert core.pus[1].os_index == 25
+
+        assert core.pus[1].hierarchical_index == 'Core:1.PU:25'
+
+        assert repr(core) == 'Core(os_index=1, logical_index=-1, parent=None, pus=(PU(os_index=1, logical_index=-1, parent=...), PU(os_index=25, logical_index=-1, parent=...)))'
+
+class TestGroup:
+    """
+    Tests for :py:class:`hwloc_xml_parser.topology.Group`.
+    """
+    XML : typing.Final[str] = """\
+<object type="Group" os_index="1" cpuset="0x00000070" complete_cpuset="0x00000070" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="13" subtype="Cluster" kind="222" subkind="0">
+    <object type="Core" os_index="0" cpuset="0x00000010" complete_cpuset="0x00000010" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="12">
+        <object type="PU" os_index="4" cpuset="0x00000010" complete_cpuset="0x00000010" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="14"/>
+    </object>
+    <object type="Core" os_index="1" cpuset="0x00000020" complete_cpuset="0x00000020" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="15">
+        <object type="PU" os_index="5" cpuset="0x00000020" complete_cpuset="0x00000020" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="16"/>
+    </object>
+    <object type="Core" os_index="2" cpuset="0x00000040" complete_cpuset="0x00000040" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="17">
+        <object type="PU" os_index="6" cpuset="0x00000040" complete_cpuset="0x00000040" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="18"/>
+    </object>
+</object>
+"""
+
+    def test(self) -> None:
+        group = Group.parse(element = xml.etree.ElementTree.fromstring(self.XML), parent = None)
+        assert group.os_index == 1
+        assert group.hierarchical_index == 'Group:1'
+        assert len(group.children) == 3
+
+        assert group.children[0].os_index == 0
+        assert group.children[1].os_index == 1
+        assert group.children[2].os_index == 2
+
+        assert group.children[0].pus[0].hierarchical_index == 'Group:1.Core:0.PU:4'
+
+        assert repr(group) == 'Group(os_index=1, logical_index=-1, parent=None, children=(Core(os_index=0, logical_index=-1, parent=..., pus=(PU(os_index=4, logical_index=-1, parent=...),)), Core(os_index=1, logical_index=-1, parent=..., pus=(PU(os_index=5, logical_index=-1, parent=...),)), Core(os_index=2, logical_index=-1, parent=..., pus=(PU(os_index=6, logical_index=-1, parent=...),))))'
+
+class TestPackage:
+    """
+    Tests for :py:class:`hwloc_xml_parser.topology.Package`.
+    """
+    XML : typing.Final[str] = """\
+<object type="Package" os_index="0" cpuset="0x000000ff" complete_cpuset="0x000000ff" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="3">
+    <object type="NUMANode" os_index="0" cpuset="0x000000ff" complete_cpuset="0x000000ff" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="21" local_memory="12086816768">
+        <page_type size="4096" count="2950883"/>
+    </object>
+    <object type="Group" os_index="0" cpuset="0x0000000f" complete_cpuset="0x0000000f" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="4" subtype="Cluster" kind="222" subkind="0">
+        <object type="Core" os_index="0" cpuset="0x00000001" complete_cpuset="0x00000001" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="2">
+            <object type="PU" os_index="0" cpuset="0x00000001" complete_cpuset="0x00000001" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="5"/>
+        </object>
+    </object>
+    <object type="Core" os_index="0" cpuset="0x00000080" complete_cpuset="0x00000080" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="19">
+        <object type="PU" os_index="7" cpuset="0x00000080" complete_cpuset="0x00000080" nodeset="0x00000001" complete_nodeset="0x00000001" gp_index="20"/>
+    </object>
+</object>
+"""
+
+    def test(self) -> None:
+        package = Package.parse(element = xml.etree.ElementTree.fromstring(self.XML))
+        assert package.os_index == 0
+        assert package.hierarchical_index == 'Package:0'
+        assert len(package.children) == 2
+
+        assert package.children[0].os_index == 0 and isinstance(package.children[0], Group)
+        assert package.children[1].os_index == 0 and isinstance(package.children[1], Core)
+
+        assert package.children[0].hierarchical_index == 'Package:0.Group:0'
+        assert package.children[1].hierarchical_index == 'Package:0.Core:0'
+
+        assert len(package.cores) == 2
+
+        assert package.cores[0].hierarchical_index == 'Package:0.Group:0.Core:0'
+        assert package.cores[1].hierarchical_index == 'Package:0.Core:0'
 
 class TestSystemTopology:
     """
@@ -319,6 +427,32 @@ class TestSystemTopology:
         ):
             st = SystemTopology(load = False)
             st._parse(filename = 'tests/data/single-apple-m2.xml')
+
+            # The machine has 1 package.
+            assert st.get_num_packages() == 1
+
+            # The machine has 8 cores in total.
+            assert st.get_num_cores() == 8
+
+            # The machine has 8 PUs in total.
+            assert st.get_num_pus() == 8
+
+            # All cores of the machine have the same number of PUs.
+            assert st.all_equal_num_pus_per_core()
+
+    def test_parse_modiatek_dimensity_9300p(self):
+        hwloc_calc_values = (
+            b'0',
+            b'0,1,2,3,4,5,6,7',
+            b'0,1,2,3,4,5,6,7'
+        )
+
+        with unittest.mock.patch(
+            target = 'subprocess.check_output',
+            side_effect = hwloc_calc_values,
+        ):
+            st = SystemTopology(load = False)
+            st._parse(filename = 'tests/data/mediatek-dimensity-9300+.xml')
 
             # The machine has 1 package.
             assert st.get_num_packages() == 1
