@@ -27,7 +27,7 @@ jobs:
         container:
             image: ${{ needs.set-vars.outputs.CI_IMAGE }}:${{ matrix.version }}
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - run: lstopo-no-graphics
 
@@ -50,7 +50,7 @@ jobs:
                       arch   : aarch64
             fail-fast: false
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
             - uses: actions/setup-python@v6
               with:
                   python-version: '3.11'
@@ -66,7 +66,7 @@ jobs:
         needs: [test]
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
             - uses: actions/setup-python@v6
               with:
                   python-version: '3.11'
@@ -110,14 +110,14 @@ jobs:
         container:
             image: ${{ needs.set-vars.outputs.CI_IMAGE }}:2.9.0
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - run: mypy --strict hwloc_xml_parser/
 
     ruff:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
             - uses: astral-sh/ruff-action@v3
 
     documentation:
@@ -126,7 +126,7 @@ jobs:
         container:
             image: ${{ needs.set-vars.outputs.CI_IMAGE }}:2.9.0
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
             - run: cd docs && make html
             - uses: actions/upload-pages-artifact@v4
               with:
