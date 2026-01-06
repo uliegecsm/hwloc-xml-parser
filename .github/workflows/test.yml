@@ -56,7 +56,7 @@ jobs:
                   python-version: '3.11'
             - run: python -m pip install -U cibuildwheel
             - run: python -m cibuildwheel --archs=${{ matrix.arch }} --output-dir wheelhouse
-            - uses: actions/upload-artifact@v5
+            - uses: actions/upload-artifact@v6
               with:
                   name: package-${{ matrix.arch }}
                   path: wheelhouse/
@@ -72,7 +72,7 @@ jobs:
                   python-version: '3.11'
             - run: python -m pip install -U build
             - run: python -m build --sdist --verbose --outdir wheelhouse .
-            - uses: actions/upload-artifact@v5
+            - uses: actions/upload-artifact@v6
               with:
                   name: package-sdist
                   path: wheelhouse/
