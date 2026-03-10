@@ -466,6 +466,32 @@ class TestSystemTopology:
             # All cores of the machine have the same number of PUs.
             assert st.all_equal_num_pus_per_core()
 
+    def test_parse_nvidia_gh_200(self) -> None:
+        hwloc_calc_values = (
+            b'0',
+            ','.join(str(x) for x in range(72)).encode(),
+            ','.join(str(x) for x in range(72)).encode(),
+        )
+
+        with unittest.mock.patch(
+            target = 'subprocess.check_output',
+            side_effect = hwloc_calc_values,
+        ):
+            st = SystemTopology(load = False)
+            st._parse(filename = 'tests/data/nvidia-gh-200.xml')
+
+            # The machine has 1 package.
+            assert st.get_num_packages() == 1
+
+            # The machine has 72 cores in total.
+            assert st.get_num_cores() == 72
+
+            # The machine has 72 PUs in total.
+            assert st.get_num_pus() == 72
+
+            # All cores of the machine have the same number of PUs.
+            assert st.all_equal_num_pus_per_core()
+
     @pytest.mark.skipif(shutil.which(cmd = SystemTopology.LSTOPO_NO_GRAPHICS) is None, reason = f'{SystemTopology.LSTOPO_NO_GRAPHICS} not found')
     def test_parse(self):
         """
