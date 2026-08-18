@@ -3,12 +3,13 @@ import shutil
 import subprocess
 import typing
 import unittest
-from unittest.mock import call
 import xml.etree.ElementTree
+from unittest.mock import call
 
 import pytest
 
-from hwloc_xml_parser.topology import Core, Group, Package, PU, SystemTopology
+from hwloc_xml_parser.topology import PU, Core, Group, Package, SystemTopology
+
 
 class TestPU:
     """

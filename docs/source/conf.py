@@ -4,13 +4,13 @@ import sys
 
 project = 'hwloc-xml-parser'
 author = 'Tomasetti, R and Arnst, M.'
-copyright = f'{datetime.datetime.now().year}, {author}'
+copyright = f'{datetime.datetime.now(datetime.timezone.utc).year}, {author}'
 
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.parent
 
 sys.path.append(str(PROJECT_DIR))
-
 from hwloc_xml_parser import __version__
+
 release = __version__
 
 # -- General configuration ---------------------------------------------------
