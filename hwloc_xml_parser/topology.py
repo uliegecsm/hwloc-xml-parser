@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 import logging
 import pathlib
@@ -6,6 +8,7 @@ import tempfile
 import typing
 import xml.etree
 import xml.etree.ElementTree
+
 
 @dataclasses.dataclass(frozen = False, slots = True, kw_only = True)
 class Object:
@@ -18,7 +21,7 @@ class Object:
     """
     os_index : int
     logical_index : int = dataclasses.field(init = False, default = -1)
-    parent : typing.Optional['Object'] = None
+    parent : Object | None = None
 
     element : dataclasses.InitVar[xml.etree.ElementTree.Element]
 
@@ -30,7 +33,7 @@ class Object:
             return f'{self.__class__.__name__}:{self.os_index}'
 
     @classmethod
-    def get_logical_from_physical(cls, type : str, hierarchical_indices : typing.Iterable[str]) -> typing.Tuple[int, ...]:
+    def get_logical_from_physical(cls, type : str, hierarchical_indices : typing.Iterable[str]) -> tuple[int, ...]:
         """
         Method to convert from an OS index (physical index) that the OS assigns to an object to the logical
         index that `hwloc` assigns to this object.
@@ -46,7 +49,7 @@ class PU(Object):
     Processing unit. The smallest unit of computation represented by `hwloc`.
     """
     @classmethod
-    def parse(cls, element : xml.etree.ElementTree.Element, parent : typing.Optional['Core'] = None) -> 'PU':
+    def parse(cls, element : xml.etree.ElementTree.Element, parent : Core | None = None) -> PU:
         return PU(
             parent = parent,
             os_index = int(element.attrib['os_index']),
@@ -61,7 +64,7 @@ class Core(Object):
     pus : tuple[PU, ...] = dataclasses.field(init = False)
 
     @classmethod
-    def parse(cls, element : xml.etree.ElementTree.Element, parent : typing.Optional[typing.Union['Package', 'Group']] = None) -> 'Core':
+    def parse(cls, element : xml.etree.ElementTree.Element, parent : Package | Group | None = None) -> Core:
         return Core(
             parent = parent,
             os_index = int(element.attrib['os_index']),
@@ -85,7 +88,7 @@ class Group(Object):
     children : tuple[Core, ...] = dataclasses.field(init = False)
 
     @classmethod
-    def parse(cls, element : xml.etree.ElementTree.Element, parent : typing.Optional['Package'] = None) -> 'Group':
+    def parse(cls, element : xml.etree.ElementTree.Element, parent : Package | None = None) -> Group:
         return Group(
             parent = parent,
             os_index = int(element.attrib['os_index']),
@@ -115,7 +118,7 @@ class Package(Object):
     cores : tuple[Core, ...] = dataclasses.field(init = False)
 
     @classmethod
-    def parse(cls, element : xml.etree.ElementTree.Element) -> 'Package':
+    def parse(cls, element : xml.etree.ElementTree.Element) -> Package:
         return Package(
             parent = None,
             os_index = int(element.attrib['os_index']),
@@ -139,7 +142,7 @@ class Package(Object):
             case 'Group':
                 return Group.parse(element = child, parent = self)
             case _:
-                logging.warning(f'Skipping child {child} ({child.attrib}).')
+                logging.warning(f'Skipping child {child} ({child.attrib}).') # ruff:ignore[LOG015]
         return None
 
     @classmethod
@@ -209,7 +212,7 @@ class SystemTopology:
 
             self._parse(filename = filename.name)
 
-    def _parse(self, filename : typing.Union[pathlib.Path, str]) -> None:
+    def _parse(self, filename : pathlib.Path | str) -> None:
         """
         Parse output of `lstopo-no-graphics`.
 
@@ -283,16 +286,14 @@ class SystemTopology:
         Returns a generator to recurse over all cores.
         """
         for package in self.packages:
-            for core in package.cores:
-                yield core
+            yield from package.cores
 
     def recurse_pus(self) -> typing.Generator[PU, None, None]:
         """
         Returns a generator to recurse over all processing units.
         """
         for core in self.recurse_cores():
-            for pu in core.pus:
-                yield pu
+            yield from core.pus
 
     def get_num_packages(self) -> int:
         """
