@@ -22,7 +22,8 @@ jobs:
             matrix:
                 version: [
                     2.9.0,
-                    2.12.0
+                    2.12.0,
+                    2.14.0
                 ]
         container:
             image: ${{ needs.set-vars.outputs.CI_IMAGE }}:${{ matrix.version }}
@@ -86,7 +87,8 @@ jobs:
             matrix:
                 version: [
                     2.9.0,
-                    2.12.0
+                    2.12.0,
+                    2.14.0
                 ]
         container:
             image: ${{ needs.set-vars.outputs.CI_IMAGE }}:${{ matrix.version }}
