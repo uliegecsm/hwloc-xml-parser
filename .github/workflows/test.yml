@@ -45,7 +45,7 @@ jobs:
         strategy:
             matrix:
                 include:
-                    - runs-on: ubuntu-24.04
+                    - runs-on: ubuntu-latest
                       arch   : x86_64
                     - runs-on: ubuntu-24.04-arm
                       arch   : aarch64
@@ -54,7 +54,7 @@ jobs:
             - uses: actions/checkout@v7
             - uses: actions/setup-python@v7
               with:
-                  python-version: '3.11'
+                  python-version: '3.14'
             - run: python -m pip install -U cibuildwheel
             - run: python -m cibuildwheel --archs=${{ matrix.arch }} --output-dir wheelhouse
             - uses: actions/upload-artifact@v7
@@ -70,7 +70,7 @@ jobs:
             - uses: actions/checkout@v7
             - uses: actions/setup-python@v7
               with:
-                  python-version: '3.11'
+                  python-version: '3.14'
             - run: python -m pip install -U build
             - run: python -m build --sdist --verbose --outdir wheelhouse .
             - uses: actions/upload-artifact@v7
