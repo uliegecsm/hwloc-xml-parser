@@ -1,6 +1,8 @@
-FROM python:3.11 AS requirements
+FROM python:3.14 AS requirements
 
-RUN python3 -m pip install mypy[mypyc] pytest sphinx==8.2.3 sphinx-rtd-theme==3.0.2 system-helpers>=0.0.3 typeguard
+RUN --mount=target=/requirements/requirements.python.txt,type=bind,source=requirements/requirements.python.txt <<EOF
+    python3 -m pip install -r /requirements/requirements.python.txt
+EOF
 
 RUN apt-helpers install-packages --update --clean --packages git
 

@@ -1,0 +1,6 @@
+mypy[mypyc]
+pytest
+sphinx
+sphinx-rtd-theme
+system-helpers>=0.0.3
+typeguard
