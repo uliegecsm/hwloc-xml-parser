@@ -10,6 +10,10 @@ on:
     release:
         types: [published]
 
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
     set-vars:
         uses: ./.github/workflows/set-vars.yml
