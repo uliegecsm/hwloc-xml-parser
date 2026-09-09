@@ -2,5 +2,5 @@ mypy[mypyc]
 pytest
 sphinx
 sphinx-rtd-theme
-system-helpers>=0.0.3
+system-helpers>=0.0.3.post4
 typeguard
